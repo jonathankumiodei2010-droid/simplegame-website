@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JONAK GAMES - Reversi</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color, #006400);
+      color: var(--text-color, #fff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      transition: background-color 0.5s, color 0.5s;
+    }
+    #logo {
+      width: 60px;
+      height: 60px;
+      margin-top: 10px;
+      user-select: none;
+      font-weight: 900;
+      font-size: 48px;
+      color: var(--btn-bg);
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+      font-family: 'Arial Black', Gadget, sans-serif;
+      margin-bottom: 12px;
+    }
+    #game-container, #start-container, #end-container {
+      width: 100%;
+      max-width: 720px;
+      text-align: center;
+      margin: 20px auto;
+      user-select: none;
+    }
+    #board-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px auto;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      gap: 3px;
+      background-color: black;
+      margin: 0 auto;
+      width: max-content;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.7);
+      user-select: none;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background-color: var(--cell-bg, #228B22);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      border-radius: 10px;
+      transition: background-color 0.3s ease;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+    }
+    .cell:hover {
+      background-color: var(--cell-hover, #2ecc40);
+    }
+    .disc {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+      transition: transform 0.3s ease;
+    }
+    .black {
+      background-color: black;
+    }
+    .white {
+      background-color: white;
+    }
+    button {
+      padding: 12px 26px;
+      font-size: 17px;
+      margin: 12px 8px;
+      cursor: pointer;
+      border-radius: 10px;
+      border: none;
+      background-color: var(--btn-bg, #008000);
+      color: var(--btn-text, #fff);
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    button:hover:not(:disabled) {
+      background-color: var(--btn-hover, #005500);
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      box-shadow: none;
+    }
+    select {
+      font-size: 16px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #444;
+      background-color: var(--select-bg, #004d00);
+      color: var(--text-color, #fff);
+      margin-left: 15px;
+      user-select: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+      user-select: none;
+    }
+    .hidden {
+      display: none;
+    }
+
+    /* Templates */
+    /* Classic Green */
+    .template-green {
+      --bg-color: #006400;
+      --text-color: #fff;
+      --cell-bg: #228B22;
+      --cell-hover: #2ecc40;
+      --btn-bg: #008000;
+      --btn-hover: #005500;
+      --btn-text: #fff;
+      --select-bg: #004d00;
+      --face-black-bg: black;
+      --face-white-bg: white;
+      --face-black-fill: white;
+      --face-white-fill: black;
+    }
+    /* Dark Blue */
+    .template-blue {
+      --bg-color: #001f3f;
+      --text-color: #eee;
+      --cell-bg: #003366;
+      --cell-hover: #0074D9;
+      --btn-bg: #0059b3;
+      --btn-hover: #003d80;
+      --btn-text: #eee;
+      --select-bg: #00264d;
+      --face-black-bg: #111;
+      --face-white-bg: #ccc;
+      --face-black-fill: #ccc;
+      --face-white-fill: #111;
+    }
+    /* Vibrant Purple */
+    .template-purple {
+      --bg-color: #4b0082;
+      --text-color: #f0e6ff;
+      --cell-bg: #7a4ca6;
+      --cell-hover: #ad6eff;
+      --btn-bg: #9a44ff;
+      --btn-hover: #6b00b5;
+      --btn-text: #f0e6ff;
+      --select-bg: #5a2479;
+      --face-black-bg: #3a005f;
+      --face-white-bg: #d9caff;
+      --face-black-fill: #d9caff;
+      --face-white-fill: #3a005f;
+    }
+
+    /* Faces container */
+    #faces {
+      display: flex;
+      justify-content: space-between;
+      max-width: 720px;
+      margin: 0 auto 10px;
+      padding: 0 50px;
+      user-select: none;
+    }
+    .face {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background-color: var(--face-bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+      transition: all 0.3s ease;
+      cursor: default;
+      position: relative;
+      user-select: none;
+    }
+    .face svg {
+      width: 52px;
+      height: 52px;
+      fill: var(--face-fill);
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+    }
+    .black-face {
+      --face-bg: var(--face-black-bg);
+      --face-fill: var(--face-black-fill);
+    }
+    .white-face {
+      --face-bg: var(--face-white-bg);
+      --face-fill: var(--face-white-fill);
+    }
+    .active {
+      box-shadow:
+        0 0 14px 4px #FFD700,
+        0 0 22px 8px #FFA500;
+      transform: scale(1.25);
+      z-index: 1;
+      animation: glowPulse 1.6s infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% {
+        box-shadow:
+          0 0 14px 4px #FFD700,
+          0 0 22px 8px #FFA500;
+      }
+      100% {
+        box-shadow:
+          0 0 20px 6px #fff200,
+          0 0 30px 10px #ffa500;
+      }
+    }
+
+    /* Screen reader only */
+    .sr-only {
+      position: absolute;
+      width: 1px; 
+      height: 1px; 
+      padding: 0; 
+      margin: -1px; 
+      overflow: hidden; 
+      clip: rect(0,0,0,0); 
+      border: 0;
+    }
+  </style>
+</head>
+<body class="template-green">
+  <div id="logo" aria-label="JONAK GAMES Logo" role="img">J</div>
+
+  <div id="start-container" role="region" aria-labelledby="start-title">
+    <h1 id="start-title">JONAK GAMES: Reversi</h1>
+    <label for="template-select">Choose Template:</label>
+    <select id="template-select" aria-describedby="template-desc">
+      <option value="green">Classic Green</option>
+      <option value="blue">Dark Blue</option>
+      <option value="purple">Vibrant Purple</option>
+    </select>
+    <span id="template-desc" class="sr-only">Select your preferred game color theme</span>
+    <br />
+    <button id="start-btn" aria-label="Start Game">Start Game</button>
+  </div>
+
+  <div id="game-container" class="hidden" role="region" aria-live="polite" aria-label="Game board and controls">
+    <div id="faces" aria-hidden="true">
+      <div id="black-face" class="face black-face" title="Black Player">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" >
+          <circle cx="32" cy="32" r="30" />
+          <circle cx="22" cy="24" r="6" />
+          <circle cx="42" cy="24" r="6" />
+          <path d="M20 44c6 8 24 8 24 0" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div id="board" role="grid" aria-label="Reversi board"></div>
+      <div id="white-face" class="face white-face" title="White Player">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" >
+          <circle cx="32" cy="32" r="30" />
+          <circle cx="22" cy="24" r="6" />
+          <circle cx="42" cy="24" r="6" />
+          <path d="M20 44c6 8 24 8 24 0" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <p id="status" aria-live="polite" aria-atomic="true">Current Turn: <span id="player-color">Black</span></p>
+    <button id="quit-btn" aria-label="Quit Game">Quit Game</button>
+  </div>
+
+  <div id="end-container" class="hidden" role="region" aria-labelledby="end-title" aria-live="assertive">
+    <h2 id="end-title">Game Over!</h2>
+    <p id="final-score"></p>
+    <button id="restart-btn" aria-label="Restart Game">Restart Game</button>
+  </div>
+
+  <script>
+    const startContainer = document.getElementById("start-container");
+    const gameContainer = document.getElementById("game-container");
+    const endContainer = document.getElementById("end-container");
+    const boardEl = document.getElementById("board");
+    const statusText = document.getElementById("player-color");
+    const finalScoreText = document.getElementById("final-score");
+    const startBtn = document.getElementById("start-btn");
+    const quitBtn = document.getElementById("quit-btn");
+    const restartBtn = document.getElementById("restart-btn");
+    const templateSelect = document.getElementById("template-select");
+    const body = document.body;
+
+    const blackFace = document.getElementById("black-face");
+    const whiteFace = document.getElementById("white-face");
+
+    const size = 8;
+    let board = [];
+    let currentPlayer = "black";
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],          [0, 1],
+      [1, -1], [1, 0], [1, 1]
+    ];
+    let gameActive = false;
+
+    function initBoard() {
+      boardEl.innerHTML = "";
+      board = Array(size).fill(null).map(() => Array(size).fill(null));
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.setAttribute("role", "gridcell");
+          cell.setAttribute("tabindex", "-1");
+          cell.addEventListener("click", () => {
+            if (!gameActive) return;
+            handleMove(r, c);
+          });
+          boardEl.appendChild(cell);
+        }
+      }
+      // Starting position
+      placeDisc(3, 3, "white");
+      placeDisc(3, 4, "black");
+      placeDisc(4, 3, "black");
+      placeDisc(4, 4, "white");
+      currentPlayer = "black";
+      updateStatus();
+      highlightActiveFace();
+      gameActive = true;
+    }
+
+    function placeDisc(r, c, color) {
+      const cell = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+      if (!cell) return;
+      cell.innerHTML = "";
+      const disc = document.createElement("div");
+      disc.className = `disc ${color}`;
+      cell.appendChild(disc);
+      board[r][c] = color;
+    }
+
+    function getValidMoves(player) {
+      const opponent = player === "black" ? "white" : "black";
+      const moves = [];
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (board[r][c] !== null) continue;
+          if (canFlip(r, c, player, opponent)) moves.push([r, c]);
+        }
+      }
+      return moves;
+    }
+
+    function canFlip(r, c, player, opponent) {
+      for (const [dx, dy] of directions) {
+        let x = r + dx, y = c + dy, foundOpponent = false;
+        while (x >= 0 && x < size && y >= 0 && y < size) {
+          if (board[x][y] === opponent) {
+            foundOpponent = true;
+          } else if (board[x][y] === player && foundOpponent) {
+            return true;
+          } else {
+            break;
+          }
+          x += dx;
+          y += dy;
+        }
+      }
+      return false;
+    }
+
+    function flipDiscs(r, c, player) {
+      const opponent = player === "black" ? "white" : "black";
+      let flipped = false;
+      for (const [dx, dy] of directions) {
+        let x = r + dx, y = c + dy;
+        let discsToFlip = [];
+        while (x >= 0 && x < size && y >= 0 && y < size) {
+          if (board[x][y] === opponent) {
+            discsToFlip.push([x, y]);
+          } else if (board[x][y] === player) {
+            if (discsToFlip.length > 0) {
+              discsToFlip.forEach(([fx, fy]) => {
+                placeDisc(fx, fy, player);
+              });
+              flipped = true;
+            }
+            break;
+          } else {
+            break;
+          }
+          x += dx;
+          y += dy;
+        }
+      }
+      return flipped;
+    }
+
+    function handleMove(r, c) {
+      if (board[r][c] !== null) return; // Occupied cell
+      const opponent = currentPlayer === "black" ? "white" : "black";
+      if (!canFlip(r, c, currentPlayer, opponent)) return; // Invalid move
+
+      placeDisc(r, c, currentPlayer);
+      flipDiscs(r, c, currentPlayer);
+
+      switchPlayer();
+    }
+
+    function switchPlayer() {
+      currentPlayer = currentPlayer === "black" ? "white" : "black";
+      if (getValidMoves(currentPlayer).length === 0) {
+        currentPlayer = currentPlayer === "black" ? "white" : "black";
+        if (getValidMoves(currentPlayer).length === 0) {
+          // Game over
+          gameActive = false;
+          endGame();
+          return;
+        } else {
+          announce(`${currentPlayer} has no moves. Turn switches back.`);
+        }
+      }
+      updateStatus();
+      highlightActiveFace();
+    }
+
+    function updateStatus() {
+      statusText.textContent = capitalize(currentPlayer);
+      updateBoardHighlights();
+    }
+
+    function updateBoardHighlights() {
+      const validMoves = getValidMoves(currentPlayer);
+      document.querySelectorAll(".cell").forEach(cell => {
+        cell.style.backgroundColor = "";
+      });
+      validMoves.forEach(([r, c]) => {
+        const cell = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+        if (cell) {
+          cell.style.backgroundColor = getComputedStyle(body).getPropertyValue('--cell-hover').trim();
+        }
+      });
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function highlightActiveFace() {
+      if (currentPlayer === "black") {
+        blackFace.classList.add("active");
+        whiteFace.classList.remove("active");
+      } else {
+        whiteFace.classList.add("active");
+        blackFace.classList.remove("active");
+      }
+    }
+
+    function endGame() {
+      const counts = countDiscs();
+      let winner;
+      if (counts.black > counts.white) winner = "Black wins!";
+      else if (counts.white > counts.black) winner = "White wins!";
+      else winner = "It's a tie!";
+
+      finalScoreText.textContent = `Final Score — Black: ${counts.black}  White: ${counts.white}. ${winner}`;
+
+      // Voice feedback
+      if ("speechSynthesis" in window) {
+        let msg = new SpeechSynthesisUtterance();
+        if (winner === "It's a tie!") {
+          msg.text = "The game is a tie!";
+        } else {
+          msg.text = `${winner} Congratulations!`;
+        }
+        window.speechSynthesis.speak(msg);
+      }
+
+      gameContainer.classList.add("hidden");
+      endContainer.classList.remove("hidden");
+    }
+
+    function countDiscs() {
+      let black = 0, white = 0;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (board[r][c] === "black") black++;
+          else if (board[r][c] === "white") white++;
+        }
+      }
+      return { black, white };
+    }
+
+    startBtn.addEventListener("click", () => {
+      // Apply template class
+      const val = templateSelect.value;
+      body.classList.remove("template-green", "template-blue", "template-purple");
+      if(val === "green") body.classList.add("template-green");
+      else if(val === "blue") body.classList.add("template-blue");
+      else if(val === "purple") body.classList.add("template-purple");
+
+      startContainer.classList.add("hidden");
+      endContainer.classList.add("hidden");
+      gameContainer.classList.remove("hidden");
+
+      initBoard();
+      startBtn.blur();
+    });
+
+    quitBtn.addEventListener("click", () => {
+      if(confirm("Are you sure you want to quit the game?")) {
+        gameActive = false;
+        gameContainer.classList.add("hidden");
+        startContainer.classList.remove("hidden");
+        clearBoard();
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      endContainer.classList.add("hidden");
+      startContainer.classList.remove("hidden");
+      restartBtn.blur();
+    });
+
+    function clearBoard() {
+      boardEl.innerHTML = "";
+      board = [];
+      blackFace.classList.remove("active");
+      whiteFace.classList.remove("active");
+      statusText.textContent = "";
+    }
+
+    // Accessibility keyboard support for board navigation
+    boardEl.addEventListener("keydown", (e) => {
+      if (!gameActive) return;
+      const focused = document.activeElement;
+      if (!focused.classList.contains("cell")) return;
+      let r = +focused.dataset.row;
+      let c = +focused.dataset.col;
+
+      switch(e.key) {
+        case "ArrowUp": e.preventDefault(); if(r>0) focusCell(r-1,c); break;
+        case "ArrowDown": e.preventDefault(); if(r<size-1) focusCell(r+1,c); break;
+        case "ArrowLeft": e.preventDefault(); if(c>0) focusCell(r,c-1); break;
+        case "ArrowRight": e.preventDefault(); if(c<size-1) focusCell(r,c+1); break;
+        case "Enter": e.preventDefault(); handleMove(r,c); break;
+        case " ": e.preventDefault(); handleMove(r,c); break;
+      }
+    });
+
+    function focusCell(r, c) {
+      const cell = document.querySelector(`.cell[data-row='${r}'][data-col='${c}']`);
+      if (cell) cell.focus();
+    }
+  </script>
+</body>
+</html>
